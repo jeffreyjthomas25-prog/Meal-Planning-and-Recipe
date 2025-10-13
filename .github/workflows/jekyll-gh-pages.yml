@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, Upload, Download, Link as LinkIcon, Plus, Trash } from 'lucide-react';
+
+// --- Main Meal Planner App ---
+export default function App() {
+  const [recipes, setRecipes] = useState([]);
+  const [mealPlan, setMealPlan] = useState({});
+  const [newRecipe, setNewRecipe] = useState({ title: '', ingredients: '', instructions: '' });
+  const [importedData, setImportedData] = useState('');
+  const [urlToScrape, setUrlToScrape] = useState('');
+
+  // Load from localStorage
+  useEffect(() => {
+    const savedRecipes = JSON.parse(localStorage.getItem('recipes')) || [];
+    const savedMealPlan = JSON.parse(localStorage.getItem('mealPlan')) || {};
+    setRecipes(savedRecipes);
+    setMealPlan(savedMealPlan);
+  }, []);
+
+  // Save to localStorage
+  useEffect(() => {
+    localStorage.setItem('recipes', JSON.stringify(recipes));
+    localStorage.setItem('mealPlan', JSON.stringify(mealPlan));
+  }, [recipes, mealPlan]);
+
+  // --- Handlers ---
+  const addRecipe = () => {
+    if (!newRecipe.title.trim()) return;
+    setRecipes([...recipes, newRecipe]);
+    setNewRecipe({ title: '', ingredients: '', instructions: '' });
+  };
+
+  const deleteRecipe = (index) => {
+    const updated = recipes.filter((_, i) => i !== index);
+    setRecipes(updated);
+  };
+
+  const handleImport = () => {
+    try {
+      const parsed = JSON.parse(importedData);
+      setRecipes(parsed.recipes || []);
+      setMealPlan(parsed.mealPlan || {});
+    } catch {
+      alert('Invalid JSON format');
+    }
+  };
+
+  const handleExport = () => {
+    const data = JSON.stringify({ recipes, mealPlan }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'mealplan.json';
+    link.click();
+  };
+
+  // --- Scrape Recipe by URL ---
+  const scrapeRecipe = async () => {
+    if (!urlToScrape.trim()) return;
+    try {
+      const key = import.meta.env.VITE_SPOONACULAR_KEY;
+      let recipeData;
+
+      if (key) {
+        const res = await fetch(`https://api.spoonacular.com/recipes/extract?apiKey=${key}&url=${encodeURIComponent(urlToScrape)}`);
+        const data = await res.json();
+        recipeData = {
+          title: data.title || 'Untitled',
+          ingredients: data.extendedIngredients?.map(i => i.original).join(', ') || '',
+          instructions: data.instructions?.replace(/<[^>]+>/g, '') || '',
+        };
+      } else {
+        // Mock data for demo
+        recipeData = {
+          title: 'Example Recipe',
+          ingredients: '1 cup flour, 2 eggs, 1/2 cup sugar',
+          instructions: 'Mix ingredients and bake at 350°F for 30 minutes.',
+        };
+      }
+
+      setRecipes([...recipes, recipeData]);
+      setUrlToScrape('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to scrape recipe');
+    }
+  };
+
+  // --- Add to Meal Plan ---
+  const addToMealPlan = (day, recipe) => {
+    setMealPlan({ ...mealPlan, [day]: [...(mealPlan[day] || []), recipe] });
+  };
+
+  const removeFromMealPlan = (day, index) => {
+    const updated = { ...mealPlan };
+    updated[day].splice(index, 1);
+    setMealPlan(updated);
+  };
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <motion.h1 layout className="text-3xl font-bold text-center mb-6">🍴 Meal Planner</motion.h1>
+
+      {/* --- Recipe Creation --- */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <h2 className="text-xl font-semibold mb-2">Add New Recipe</h2>
+          <input className="border p-2 w-full mb-2" placeholder="Title" value={newRecipe.title} onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })} />
+          <textarea className="border p-2 w-full mb-2" placeholder="Ingredients" value={newRecipe.ingredients} onChange={(e) => setNewRecipe({ ...newRecipe, ingredients: e.target.value })}></textarea>
+          <textarea className="border p-2 w-full mb-2" placeholder="Instructions" value={newRecipe.instructions} onChange={(e) => setNewRecipe({ ...newRecipe, instructions: e.target.value })}></textarea>
+          <Button onClick={addRecipe}><Plus className="mr-2 h-4 w-4" /> Add Recipe</Button>
+        </CardContent>
+      </Card>
+
+      {/* --- Recipe Scraper --- */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <h2 className="text-xl font-semibold mb-2">Scrape Recipe from URL</h2>
+          <div className="flex gap-2">
+            <input className="border p-2 flex-grow" placeholder="Paste recipe URL" value={urlToScrape} onChange={(e) => setUrlToScrape(e.target.value)} />
+            <Button onClick={scrapeRecipe}><LinkIcon className="mr-2 h-4 w-4" /> Scrape</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* --- Import/Export --- */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <h2 className="text-xl font-semibold mb-2">Import / Export Data</h2>
+          <textarea className="border p-2 w-full mb-2" placeholder="Paste JSON here to import" value={importedData} onChange={(e) => setImportedData(e.target.value)}></textarea>
+          <div className="flex gap-2">
+            <Button onClick={handleImport}><Upload className="mr-2 h-4 w-4" /> Import</Button>
+            <Button onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Export</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* --- Recipe List --- */}
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        {recipes.map((r, i) => (
+          <Card key={i} className="shadow">
+            <CardContent className="p-4">
+              <h3 className="font-bold text-lg mb-1">{r.title}</h3>
+              <p className="text-sm mb-2 text-gray-700">{r.ingredients}</p>
+              <p className="text-sm text-gray-600 mb-4">{r.instructions}</p>
+              <div className="flex justify-between">
+                <Button onClick={() => addToMealPlan(days[new Date().getDay()], r)}>Add to Today</Button>
+                <Button variant="destructive" onClick={() => deleteRecipe(i)}><Trash className="mr-2 h-4 w-4" /> Delete</Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* --- Meal Plan Calendar --- */}
+      <Card>
+        <CardContent className="p-4">
+          <h2 className="text-xl font-semibold mb-2 flex items-center"><Calendar className="mr-2 h-5 w-5" />Weekly Meal Plan</h2>
+          <div className="grid md:grid-cols-4 gap-4">
+            {days.map((day) => (
+              <div key={day} className="border rounded-lg p-3 bg-white shadow-sm">
+                <h3 className="font-bold text-lg mb-2">{day}</h3>
+                {(mealPlan[day] || []).map((r, i) => (
+                  <div key={i} className="border p-2 rounded mb-2 bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <span>{r.title}</span>
+                      <Button variant="ghost" size="sm" onClick={() => removeFromMealPlan(day, i)}>❌</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
