@@ -3,40 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recipes & Meal Planning</title>
-
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA2hOiQV4oiMf8YGlXMsK7vMbsdWonAsYE",
-    authDomain: "meal-recipe-b7753.firebaseapp.com",
-    projectId: "meal-recipe-b7753",
-    storageBucket: "meal-recipe-b7753.firebasestorage.app",
-    messagingSenderId: "775365507411",
-    appId: "1:775365507411:web:eb8406b1d1b27dd6c609a6"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Export to use in HTML script
-  window.db = db;
-  window.firebaseCollection = collection;
-  window.addDoc = addDoc;
-  window.getDocs = getDocs;
-  window.query = query;
-  window.orderBy = orderBy;
-</script>
-
+<title>Recipes and Meal Planning</title>
 <style>
   body { margin:0; font-family:'Segoe UI',sans-serif; background:#e6f4f1; color:#333; }
   nav { background:#14532d; display:flex; flex-wrap:wrap; justify-content:center; padding:12px 0; }
-  nav a { color:white; margin:5px 15px; text-decoration:none; font-weight:bold; }
+  nav a { color:white; margin:5px 15px; text-decoration:none; font-weight:bold; font-size:1.1em; }
   nav a.active { text-decoration:underline; }
-  .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+  .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); min-height:400px;}
   h1, h2 { text-align:center; color:#14532d; }
   .hidden { display:none; }
   input, textarea { width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:6px; }
@@ -70,12 +43,12 @@
 
 <div class="container">
 
-  <!-- Home -->
+  <!-- Home Page -->
   <section id="home-section">
     <div class="hero">
-      <h1>Recipes & Meal Planning</h1>
+      <h1>Recipes and Meal Planning</h1>
     </div>
-    <p style="text-align:center;">Organize, save, and plan your meals for the week with beautiful recipes and fine cuisine images.</p>
+    <p style="text-align:center; font-size:1.2em;">Welcome to Recipes and Meal Planning! Add your favorite recipes, browse your recipe book, and plan your weekly meals with drag-and-drop ease. Beautiful images and fine cuisine ideas included!</p>
   </section>
 
   <!-- Add Recipe -->
@@ -134,33 +107,40 @@
 </div>
 
 <script type="module">
-  import { db, firebaseCollection, addDoc, getDocs, query, orderBy } from './'; // Using window exports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA2hOiQV4oiMf8YGlXMsK7vMbsdWonAsYE",
+    authDomain: "meal-recipe-b7753.firebaseapp.com",
+    projectId: "meal-recipe-b7753",
+    storageBucket: "meal-recipe-b7753.firebasestorage.app",
+    messagingSenderId: "775365507411",
+    appId: "1:775365507411:web:eb8406b1d1b27dd6c609a6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
   let recipes = [];
-  let mealPlan = {};
+  let mealPlan = JSON.parse(localStorage.getItem('mealPlan')||'{}');
 
   async function loadRecipesFromFirestore(){
-    const q = query(firebaseCollection(db, "recipes"), orderBy("timestamp","desc"));
-    const snapshot = await getDocs(q);
-    recipes = snapshot.docs.map(doc=>({ id: doc.id, ...doc.data() }));
+    const q=query(collection(db,"recipes"),orderBy("timestamp","desc"));
+    const snapshot=await getDocs(q);
+    recipes=snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
   }
-
-  function saveMealPlan() { localStorage.setItem('mealPlan', JSON.stringify(mealPlan)); }
-  function loadMealPlan() { mealPlan = JSON.parse(localStorage.getItem('mealPlan')) || {}; }
 
   async function showSection(name){
     ['home','add','book','meal'].forEach(s=>{
       document.getElementById(s+'-section').classList.add('hidden');
-      document.getElementById('nav-'+s)?.classList.remove('active');
+      document.getElementById('nav-'+s).classList.remove('active');
     });
     document.getElementById(name+'-section').classList.remove('hidden');
-    document.getElementById('nav-'+name)?.classList.add('active');
+    document.getElementById('nav-'+name).classList.add('active');
 
-    if(name==='book' || name==='meal'){
-      await loadRecipesFromFirestore();
-      if(name==='book') renderBook();
-      if(name==='meal') renderMealPlanner();
-    }
+    if(name==='book'){ await loadRecipesFromFirestore(); renderBook(); }
+    if(name==='meal'){ await loadRecipesFromFirestore(); renderMealPlanner(); }
   }
 
   document.getElementById('add-form').addEventListener('submit', async e=>{
@@ -177,13 +157,9 @@
       await new Promise(res=>reader.onload=()=>res());
     }
 
-    const recipeData = { title, ingredients, instructions, image: reader? reader.result : null, timestamp: Date.now() };
-    try{
-      await addDoc(firebaseCollection(db,"recipes"),recipeData);
-      alert("Recipe saved online!");
-      e.target.reset();
-      await loadRecipesFromFirestore();
-    }catch(err){console.error(err);}
+    await addDoc(collection(db,"recipes"),{title,ingredients,instructions,image:reader?reader.result:null,timestamp:Date.now()});
+    alert("Recipe saved!");
+    e.target.reset();
   });
 
   function renderBook(){
@@ -195,16 +171,8 @@
 
     recipes.forEach(r=>{
       const li=document.createElement('li');
-      li.innerHTML=`
-        <span onclick="openRecipe('${r.id}')" style="cursor:pointer;font-weight:bold;">${r.title}</span>
-      `;
-      if(r.image) {
-        const img=document.createElement('img');
-        img.src=r.image;
-        img.style.height='50px';
-        img.style.marginLeft='10px';
-        li.appendChild(img);
-      }
+      li.innerHTML=`<span onclick="openRecipe('${r.id}')" style="cursor:pointer;font-weight:bold;">${r.title}</span>`;
+      if(r.image){ const img=document.createElement('img'); img.src=r.image; img.style.height='50px'; img.style.marginLeft='10px'; li.appendChild(img); }
       list.appendChild(li);
     });
   }
@@ -219,10 +187,9 @@
   }
 
   document.getElementById('close-modal').onclick=()=>document.getElementById('recipe-modal').style.display='none';
-  window.onclick=(e)=>{if(e.target.id==='recipe-modal')document.getElementById('recipe-modal').style.display='none';};
+  window.onclick=(e)=>{if(e.target.id==='recipe-modal') document.getElementById('recipe-modal').style.display='none';};
 
   function renderMealPlanner(){
-    loadMealPlan();
     const pool=document.getElementById('recipe-pool');
     pool.innerHTML='';
     recipes.forEach(r=>{
@@ -244,7 +211,7 @@
           const card=document.createElement('div');
           card.className='card';
           card.textContent=recipe.title;
-          card.ondblclick=()=>{ mealPlan[day.dataset.day]=mealPlan[day.dataset.day].filter(i=>i!==rid); saveMealPlan(); renderMealPlanner(); };
+          card.ondblclick=()=>{ mealPlan[day.dataset.day]=mealPlan[day.dataset.day].filter(i=>i!==rid); localStorage.setItem('mealPlan',JSON.stringify(mealPlan)); renderMealPlanner(); };
           day.appendChild(card);
         }
       });
@@ -253,13 +220,13 @@
         const rid=e.dataTransfer.getData('text/plain');
         if(!mealPlan[day.dataset.day]) mealPlan[day.dataset.day]=[];
         mealPlan[day.dataset.day].push(rid);
-        saveMealPlan();
+        localStorage.setItem('mealPlan',JSON.stringify(mealPlan));
         renderMealPlanner();
       });
     });
   }
 
-  function clearCalendar(){ if(confirm("Clear all meals?")){ mealPlan={}; saveMealPlan(); renderMealPlanner(); } }
+  function clearCalendar(){ if(confirm("Clear all meals?")){ mealPlan={}; localStorage.setItem('mealPlan',JSON.stringify(mealPlan)); renderMealPlanner(); } }
 
   showSection('home');
 </script>
