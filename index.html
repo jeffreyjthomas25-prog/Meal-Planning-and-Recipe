@@ -8,7 +8,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA2hOiQV4oiMf8YGlXMsK7vMbsdWonAsYE",
@@ -21,6 +21,14 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+
+  // Export to use in HTML script
+  window.db = db;
+  window.firebaseCollection = collection;
+  window.addDoc = addDoc;
+  window.getDocs = getDocs;
+  window.query = query;
+  window.orderBy = orderBy;
 </script>
 
 <style>
@@ -125,147 +133,135 @@
   </div>
 </div>
 
-<script>
-let recipes = [];
-let mealPlan = {};
+<script type="module">
+  import { db, firebaseCollection, addDoc, getDocs, query, orderBy } from './'; // Using window exports
 
-function loadData() {
-  recipes = JSON.parse(localStorage.getItem('recipes')) || [];
-  mealPlan = JSON.parse(localStorage.getItem('mealPlan')) || {};
-}
-function saveRecipes() { localStorage.setItem('recipes', JSON.stringify(recipes)); }
-function saveMealPlan() { localStorage.setItem('mealPlan', JSON.stringify(mealPlan)); }
+  let recipes = [];
+  let mealPlan = {};
 
-function showSection(name){
-  ['home','add','book','meal'].forEach(s=>{
-    document.getElementById(s+'-section').classList.add('hidden');
-    document.getElementById('nav-'+s)?.classList.remove('active');
-  });
-  document.getElementById(name+'-section').classList.remove('hidden');
-  document.getElementById('nav-'+name)?.classList.add('active');
-  if(name==='book') renderBook();
-  if(name==='meal') renderMealPlanner();
-}
+  async function loadRecipesFromFirestore(){
+    const q = query(firebaseCollection(db, "recipes"), orderBy("timestamp","desc"));
+    const snapshot = await getDocs(q);
+    recipes = snapshot.docs.map(doc=>({ id: doc.id, ...doc.data() }));
+  }
 
-document.getElementById('add-form').addEventListener('submit', e=>{
-  e.preventDefault();
-  const title=document.getElementById('add-title').value.trim();
-  const ingredients=document.getElementById('add-ingredients').value.trim();
-  const instructions=document.getElementById('add-instructions').value.trim();
-  const image=document.getElementById('add-image').files[0];
-  let reader = null;
-  if(image){
-    reader = new FileReader();
-    reader.onload = function(ev){
-      const newRecipe={id:Date.now(),title,ingredients,instructions,image:ev.target.result};
-      recipes.push(newRecipe);
-      saveRecipes();
+  function saveMealPlan() { localStorage.setItem('mealPlan', JSON.stringify(mealPlan)); }
+  function loadMealPlan() { mealPlan = JSON.parse(localStorage.getItem('mealPlan')) || {}; }
+
+  async function showSection(name){
+    ['home','add','book','meal'].forEach(s=>{
+      document.getElementById(s+'-section').classList.add('hidden');
+      document.getElementById('nav-'+s)?.classList.remove('active');
+    });
+    document.getElementById(name+'-section').classList.remove('hidden');
+    document.getElementById('nav-'+name)?.classList.add('active');
+
+    if(name==='book' || name==='meal'){
+      await loadRecipesFromFirestore();
+      if(name==='book') renderBook();
+      if(name==='meal') renderMealPlanner();
+    }
+  }
+
+  document.getElementById('add-form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const title=document.getElementById('add-title').value.trim();
+    const ingredients=document.getElementById('add-ingredients').value.trim();
+    const instructions=document.getElementById('add-instructions').value.trim();
+    const file=document.getElementById('add-image').files[0];
+
+    let reader=null;
+    if(file){
+      reader=new FileReader();
+      reader.readAsDataURL(file);
+      await new Promise(res=>reader.onload=()=>res());
+    }
+
+    const recipeData = { title, ingredients, instructions, image: reader? reader.result : null, timestamp: Date.now() };
+    try{
+      await addDoc(firebaseCollection(db,"recipes"),recipeData);
+      alert("Recipe saved online!");
       e.target.reset();
-      alert("Recipe added!");
-      showSection('book');
-    };
-    reader.readAsDataURL(image);
-  } else {
-    const newRecipe={id:Date.now(),title,ingredients,instructions};
-    recipes.push(newRecipe);
-    saveRecipes();
-    e.target.reset();
-    alert("Recipe added!");
-    showSection('book');
-  }
-});
-
-function renderBook(){
-  loadData();
-  const list=document.getElementById('recipe-list');
-  list.innerHTML='';
-  if(recipes.length===0){
-    document.getElementById('no-recipes').style.display='block';
-    return;
-  }
-  document.getElementById('no-recipes').style.display='none';
-  recipes.forEach(r=>{
-    const li=document.createElement('li');
-    li.innerHTML=`<span style="cursor:pointer;font-weight:bold;" onclick="openRecipe(${r.id})">${r.title}</span>
-      <button onclick="deleteRecipe(${r.id})">Delete</button>`;
-    list.appendChild(li);
+      await loadRecipesFromFirestore();
+    }catch(err){console.error(err);}
   });
-}
 
-function deleteRecipe(id){
-  if(confirm("Delete this recipe?")){
-    recipes=recipes.filter(r=>r.id!==id);
-    saveRecipes();
-    renderBook();
-    Object.keys(mealPlan).forEach(day=>{ mealPlan[day]=mealPlan[day].filter(i=>i!==id); });
-    saveMealPlan();
+  function renderBook(){
+    const list=document.getElementById('recipe-list');
+    const noRecipes=document.getElementById('no-recipes');
+    list.innerHTML='';
+    if(recipes.length===0){ noRecipes.style.display='block'; return; }
+    noRecipes.style.display='none';
+
+    recipes.forEach(r=>{
+      const li=document.createElement('li');
+      li.innerHTML=`
+        <span onclick="openRecipe('${r.id}')" style="cursor:pointer;font-weight:bold;">${r.title}</span>
+      `;
+      if(r.image) {
+        const img=document.createElement('img');
+        img.src=r.image;
+        img.style.height='50px';
+        img.style.marginLeft='10px';
+        li.appendChild(img);
+      }
+      list.appendChild(li);
+    });
   }
-}
 
-function openRecipe(id){
-  const r=recipes.find(x=>x.id===id);
-  if(!r) return;
-  document.getElementById('modal-title').textContent=r.title;
-  document.getElementById('modal-ingredients').innerHTML=r.ingredients.split('\n').map(i=>`<li>${i}</li>`).join('');
-  document.getElementById('modal-instructions').textContent=r.instructions;
-  if(r.image){
-    const img=document.createElement('img'); img.src=r.image; img.style.width="100%"; img.style.borderRadius="8px"; 
-    document.getElementById('modal-content').insertBefore(img, document.getElementById('modal-title').nextSibling);
+  function openRecipe(id){
+    const r=recipes.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('modal-title').textContent=r.title;
+    document.getElementById('modal-ingredients').innerHTML=r.ingredients.split('\n').map(i=>`<li>${i}</li>`).join('');
+    document.getElementById('modal-instructions').textContent=r.instructions;
+    document.getElementById('recipe-modal').style.display='flex';
   }
-  document.getElementById('recipe-modal').style.display='flex';
-}
-document.getElementById('close-modal').onclick=()=>document.getElementById('recipe-modal').style.display='none';
-window.onclick=(e)=>{if(e.target.id==='recipe-modal')document.getElementById('recipe-modal').style.display='none';};
 
-function renderMealPlanner(){
-  loadData();
-  const pool=document.getElementById('recipe-pool');
-  pool.innerHTML='';
-  if(recipes.length===0){ pool.innerHTML="<p>No recipes yet.</p>"; }
-  else {
+  document.getElementById('close-modal').onclick=()=>document.getElementById('recipe-modal').style.display='none';
+  window.onclick=(e)=>{if(e.target.id==='recipe-modal')document.getElementById('recipe-modal').style.display='none';};
+
+  function renderMealPlanner(){
+    loadMealPlan();
+    const pool=document.getElementById('recipe-pool');
+    pool.innerHTML='';
     recipes.forEach(r=>{
       const div=document.createElement('div');
       div.className='draggable';
       div.textContent=r.title;
-      div.draggable=true;
       div.dataset.id=r.id;
-      div.addEventListener('dragstart', handleDragStart);
+      div.draggable=true;
+      div.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', r.id));
       pool.appendChild(div);
+    });
+
+    document.querySelectorAll('.day').forEach(day=>{
+      day.innerHTML=`<h4>${day.dataset.day}</h4>`;
+      const meals=mealPlan[day.dataset.day]||[];
+      meals.forEach(rid=>{
+        const recipe=recipes.find(r=>r.id===rid);
+        if(recipe){
+          const card=document.createElement('div');
+          card.className='card';
+          card.textContent=recipe.title;
+          card.ondblclick=()=>{ mealPlan[day.dataset.day]=mealPlan[day.dataset.day].filter(i=>i!==rid); saveMealPlan(); renderMealPlanner(); };
+          day.appendChild(card);
+        }
+      });
+      day.addEventListener('dragover', e=>e.preventDefault());
+      day.addEventListener('drop', e=>{
+        const rid=e.dataTransfer.getData('text/plain');
+        if(!mealPlan[day.dataset.day]) mealPlan[day.dataset.day]=[];
+        mealPlan[day.dataset.day].push(rid);
+        saveMealPlan();
+        renderMealPlanner();
+      });
     });
   }
 
-  document.querySelectorAll('.day').forEach(day=>{
-    day.innerHTML=`<h4>${day.dataset.day}</h4>`;
-    const meals=mealPlan[day.dataset.day]||[];
-    meals.forEach(rid=>{
-      const recipe=recipes.find(r=>r.id==rid);
-      if(recipe){
-        const card=document.createElement('div');
-        card.className='card';
-        card.textContent=recipe.title;
-        card.ondblclick=(e)=>{ removeMeal(day.dataset.day,rid); };
-        day.appendChild(card);
-      }
-    });
-    day.addEventListener('dragover', e=>e.preventDefault());
-    day.addEventListener('drop', handleDrop);
-  });
-}
+  function clearCalendar(){ if(confirm("Clear all meals?")){ mealPlan={}; saveMealPlan(); renderMealPlanner(); } }
 
-function handleDragStart(e){ e.dataTransfer.setData('text/plain', e.target.dataset.id); }
-function handleDrop(e){
-  const rid=parseInt(e.dataTransfer.getData('text/plain'));
-  const day=e.currentTarget.dataset.day;
-  if(!mealPlan[day]) mealPlan[day]=[];
-  mealPlan[day].push(rid);
-  saveMealPlan();
-  renderMealPlanner();
-}
-function removeMeal(day,rid){ mealPlan[day]=mealPlan[day].filter(i=>i!==rid); saveMealPlan(); renderMealPlanner(); }
-function clearCalendar(){ if(confirm("Clear all meals?")){ mealPlan={}; saveMealPlan(); renderMealPlanner(); } }
-
-loadData();
-showSection('home');
+  showSection('home');
 </script>
 </body>
 </html>
