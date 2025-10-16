@@ -1,365 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Fine Cuisine — Recipe Book & Meal Planner</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipes & Meal Planning</title>
 
-<!-- Google font -->
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
-<!-- html2canvas -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-<style>
-  :root{
-    --bg1: #f5f7f6;
-    --panel: #ffffff;
-    --accent: #0f766e;   /* deep teal */
-    --accent-2: #083344; /* deep navy */
-    --muted: #6b7280;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background: linear-gradient(180deg,#f0f5f4 0%, #eef6fb 100%);
-    color:#0f172a;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-  }
-
-  /* Header */
-  header{
-    background: linear-gradient(90deg,var(--accent-2),var(--accent));
-    color: #fff;
-    padding: 28px 18px;
-    text-align:center;
-    box-shadow: 0 6px 18px rgba(12, 74, 70, 0.12);
-  }
-  header h1{
-    font-family: "Playfair Display", serif;
-    margin:0;
-    font-size: clamp(20px, 3.5vw, 28px);
-    letter-spacing:0.6px;
-    font-weight:700;
-  }
-  header p{ margin:6px 0 0; opacity:0.9; font-size:14px; }
-
-  /* Nav Tabs */
-  nav.tabs{
-    display:flex;
-    gap:8px;
-    justify-content:center;
-    padding:12px;
-    background:transparent;
-    margin-top:-10px;
-  }
-  nav.tabs button{
-    background:transparent;
-    border:1px solid rgba(255,255,255,0.14);
-    color:white;
-    padding:8px 14px;
-    border-radius:999px;
-    cursor:pointer;
-    font-weight:600;
-    transition: all .18s ease;
-    backdrop-filter: blur(4px);
-  }
-  nav.tabs button.active{
-    background: rgba(255,255,255,0.12);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(12,74,70,0.12);
-  }
-
-  /* Main container */
-  .wrap{
-    max-width:1100px;
-    margin: 26px auto;
-    padding: 18px;
-  }
-  .panel{
-    background:var(--panel);
-    border-radius:12px;
-    padding:18px;
-    box-shadow: 0 6px 18px rgba(10,20,30,0.04);
-  }
-
-  /* grid for top part */
-  .grid-2{
-    display:grid;
-    grid-template-columns: 1fr 360px;
-    gap:18px;
-    align-items:start;
-  }
-  @media(max-width:920px){ .grid-2{ grid-template-columns: 1fr; } }
-
-  /* Home / Overview */
-  .hero{
-    display:flex;
-    gap:18px;
-    align-items:center;
-  }
-  .hero .hero-text{
-    flex:1;
-  }
-  .hero h2{
-    font-family:"Playfair Display", serif;
-    margin:0 0 10px 0;
-    color:var(--accent-2);
-  }
-  .hero p{ color:var(--muted); margin:0 0 12px 0; line-height:1.5; font-size:15px; }
-  .hero img{
-    width:100%;
-    border-radius:10px;
-    object-fit:cover;
-    box-shadow: 0 6px 30px rgba(8, 25, 32, 0.06);
-  }
-
-  /* Form controls */
-  .field label{ display:block; font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:600;}
-  .field input[type="text"], .field textarea, .field input[type="url"]{
-    width:100%;
-    padding:10px 12px;
-    border-radius:8px;
-    border:1px solid #e6eef0;
-    background: #fcfeff;
-    font-size:14px;
-    color:#072029;
-  }
-  .field input[type="file"]{ padding:6px; }
-
-  .btn{
-    background: linear-gradient(90deg,var(--accent),var(--accent-2));
-    color:white;
-    border:none;
-    padding:10px 14px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:600;
-  }
-  .btn.ghost{
-    background:transparent;
-    color:var(--accent-2);
-    border:1px solid #e6eef0;
-  }
-
-  /* recipe pool & cards */
-  .recipe-pool{
-    display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-    gap:14px;
-    margin-top:8px;
-  }
-  .recipe-card{
-    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98));
-    border-radius:10px;
-    overflow:hidden;
-    border:1px solid #eef3f3;
-    cursor:grab;
-    display:flex;
-    flex-direction:column;
-    min-height:210px;
-  }
-  .recipe-card img{
-    height:130px; width:100%; object-fit:cover;
-  }
-  .recipe-card .meta{
-    padding:12px;
-    flex:1;
-    display:flex;
-    flex-direction:column;
-  }
-  .recipe-card .meta h4{ margin:0; font-size:16px; color:var(--accent-2); }
-  .recipe-card .meta p{ margin:8px 0 0 0; color:var(--muted); font-size:13px; flex:1; }
-
-  .recipe-card .meta .row{
-    display:flex; gap:8px; align-items:center; margin-top:10px;
-  }
-  .small-btn{ background:#f3f7f7; border:1px solid #eef3f3; padding:6px 8px; border-radius:8px; cursor:pointer; }
-
-  /* calendar */
-  .calendar{
-    display:grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap:12px;
-    margin-top:12px;
-  }
-  @media(max-width:900px){ .calendar{ grid-template-columns: repeat(2, 1fr); } }
-  .day{
-    background: #fbffff;
-    border-radius:10px;
-    min-height:130px;
-    padding:8px;
-    border:1px solid #eef3f3;
-  }
-  .day h5{ margin:0 0 8px 0; color:var(--accent-2); font-size:14px; }
-  .day .meal{
-    background: rgba(8, 51, 52, 0.93);
-    color:white;
-    padding:8px;
-    border-radius:8px;
-    margin-bottom:8px;
-    font-weight:600;
-    cursor:pointer;
-    background-size: cover;
-    background-position: center;
-  }
-
-  /* footer */
-  footer{ text-align:center; color:var(--muted); padding:30px 10px; font-size:13px; }
-
-  /* subtle helper */
-  .muted { color:var(--muted); font-size:13px; }
-
-</style>
-</head>
-<body>
-
-<header>
-  <h1>Fine Cuisine — Recipe Book & Meal Planner</h1>
-  <p>Organize refined recipes, plan your week, and import recipes from the web.</p>
-  <nav class="tabs" aria-label="Main tabs">
-    <button id="tab-home" class="active" onclick="showSection('home')">Overview</button>
-    <button id="tab-add" onclick="showSection('add')">Add Recipe</button>
-    <button id="tab-scrape" onclick="showSection('scrape')">Scrape</button>
-    <button id="tab-book" onclick="showSection('book')">Recipe Book</button>
-    <button id="tab-meal" onclick="showSection('meal')">Meal Planner</button>
-  </nav>
-</header>
-
-<div class="wrap">
-
-  <!-- HOME -->
-  <section id="home" class="panel section active">
-    <div class="grid-2">
-      <div>
-        <div class="hero">
-          <div class="hero-text">
-            <h2>Welcome to Fine Cuisine</h2>
-            <p>Store elegant recipes with rich imagery, extract recipes from web sources, and visually plan your weekly menu. Recipes you save are stored in the cloud (Firebase) for easy sharing and persistence.</p>
-            <p class="muted">Tip: Use the <strong>Scrape</strong> tab to import a recipe URL, then review and save it to your Recipe Book.</p>
-          </div>
-        </div>
-
-        <div style="margin-top:18px" class="panel">
-          <h3 style="margin-top:0; color:var(--accent-2)">Featured Fine Cuisine</h3>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <img src="https://images.unsplash.com/photo-1543353071-087092ec393a?auto=format&fit=crop&w=800&q=60" alt="fine1" style="border-radius:8px; width:100%; height:150px; object-fit:cover;">
-            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=60" alt="fine2" style="border-radius:8px; width:100%; height:150px; object-fit:cover;">
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="panel">
-          <h4 style="margin:0 0 10px 0; color:var(--accent-2)">Quick Actions</h4>
-          <div style="display:flex;flex-direction:column; gap:8px;">
-            <button class="btn" onclick="showSection('add')">Add a New Recipe</button>
-            <button class="btn ghost" onclick="showSection('scrape')">Import from a Website</button>
-            <button class="btn" onclick="showSection('meal')">Open Meal Planner</button>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:12px;">
-          <h4 style="margin:0 0 8px 0; color:var(--accent-2)">Notes</h4>
-          <p class="muted" style="margin:0;">Recipes are saved to your Firebase project. Meal plan is stored locally in this browser so you can quickly plan without network delays.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ADD -->
-  <section id="add" class="panel section hidden">
-    <h2 style="margin-top:0; color:var(--accent-2)">Add Recipe</h2>
-
-    <form id="add-form" class="panel" style="padding:14px;">
-      <div class="field">
-        <label for="add-title">Title</label>
-        <input id="add-title" type="text" placeholder="e.g., Pan-seared scallops with beurre blanc" required>
-      </div>
-
-      <div class="field">
-        <label for="upload-image">Image (optional)</label>
-        <input id="upload-image" type="file" accept="image/*">
-        <img id="image-preview" src="" alt="preview" style="display:none; margin-top:10px; border-radius:8px; width:100%; height:200px; object-fit:cover;">
-      </div>
-
-      <div class="field">
-        <label for="add-ingredients">Ingredients (one per line)</label>
-        <textarea id="add-ingredients" rows="6" placeholder="e.g., 200g scallops"></textarea>
-      </div>
-
-      <div class="field">
-        <label for="add-instructions">Instructions</label>
-        <textarea id="add-instructions" rows="6" placeholder="Preparation steps..."></textarea>
-      </div>
-
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
-        <button type="submit" class="btn">Save Recipe</button>
-        <button type="button" class="btn ghost" onclick="clearAddForm()">Clear</button>
-      </div>
-    </form>
-  </section>
-
-  <!-- SCRAPE -->
-  <section id="scrape" class="panel section hidden">
-    <h2 style="margin-top:0; color:var(--accent-2)">Import Recipe (Scrape)</h2>
-
-    <div class="panel" style="padding:14px;">
-      <div class="field">
-        <label for="recipe-url">Recipe URL</label>
-        <input id="recipe-url" type="url" placeholder="Paste recipe link (e.g., allrecipes.com/recipe/...)">
-      </div>
-
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
-        <button class="btn" onclick="scrapeRecipe()">Scrape & Fill Form</button>
-        <button class="btn ghost" onclick="document.getElementById('recipe-url').value=''">Clear</button>
-      </div>
-
-      <p class="muted" style="margin-top:10px;">We use Spoonacular's extract endpoint to safely parse many recipe pages. If scraping fails, try a different page or paste the recipe manually.</p>
-    </div>
-  </section>
-
-  <!-- BOOK -->
-  <section id="book" class="panel section hidden">
-    <h2 style="margin-top:0; color:var(--accent-2)">Recipe Book</h2>
-    <div id="recipes-grid" class="recipe-pool"></div>
-  </section>
-
-  <!-- MEAL PLANNER -->
-  <section id="meal" class="panel section hidden">
-    <h2 style="margin-top:0; color:var(--accent-2)">Weekly Meal Planner</h2>
-    <p class="muted">Drag recipes from the pool into any day. Double-click a planned meal to remove it.</p>
-
-    <div style="display:flex; gap:14px;">
-      <div style="flex:1;">
-        <div id="calendar" class="calendar"></div>
-        <div style="text-align:right; margin-top:10px;">
-          <button class="btn" onclick="downloadPlan()">Download Plan as Image</button>
-        </div>
-      </div>
-
-      <div style="width:320px;">
-        <h4 style="margin:0 0 8px 0; color:var(--accent-2)">Recipe Pool</h4>
-        <div id="pool" class="recipe-pool"></div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<footer>
-  © Fine Cuisine • Store recipes in your Firebase project • Spoonacular used for scraping
-</footer>
-
-<!-- Firebase + Scraper + App logic -->
+<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  import { 
-    getFirestore, collection, addDoc, getDocs, deleteDoc, doc 
-  } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-  // ---------- CONFIG ----------
   const firebaseConfig = {
     apiKey: "AIzaSyA2hOiQV4oiMf8YGlXMsK7vMbsdWonAsYE",
     authDomain: "meal-recipe-b7753.firebaseapp.com",
@@ -369,280 +19,253 @@
     appId: "1:775365507411:web:eb8406b1d1b27dd6c609a6"
   };
 
-  // Spoonacular key you provided
-  const SPOONACULAR_KEY = "bfa6c771c29043c790e20f17b635b3ba";
-
-  // ---------- INIT ----------
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+</script>
 
-  // Local state
-  let RECIPES = []; // loaded from firebase
-  let MEALPLAN = JSON.parse(localStorage.getItem('fine_meal_plan') || "{}");
+<style>
+  body { margin:0; font-family:'Segoe UI',sans-serif; background:#e6f4f1; color:#333; }
+  nav { background:#14532d; display:flex; flex-wrap:wrap; justify-content:center; padding:12px 0; }
+  nav a { color:white; margin:5px 15px; text-decoration:none; font-weight:bold; }
+  nav a.active { text-decoration:underline; }
+  .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+  h1, h2 { text-align:center; color:#14532d; }
+  .hidden { display:none; }
+  input, textarea { width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:6px; }
+  button { background:#16a34a; color:white; border:none; padding:10px 16px; border-radius:6px; cursor:pointer; margin-top:10px; }
+  button:hover { background:#15803d; }
+  ul { list-style:none; padding:0; }
+  li { background:#e6f4ea; border-radius:8px; margin-bottom:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; }
+  .card { background:#f0fdf4; padding:8px; border-radius:8px; margin:6px 0; cursor:pointer; }
+  .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:20px; }
+  .day { background:#d1fae5; border-radius:8px; min-height:140px; padding:8px; }
+  .day h4 { text-align:center; background:#14532d; color:white; border-radius:4px; padding:4px; margin-top:0; }
+  .draggable { background:#4ade80; color:white; border-radius:6px; padding:5px; margin-top:5px; cursor:grab; }
+  #recipe-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
+  #modal-content { background:white; border-radius:12px; padding:20px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  #modal-content h3 { color:#14532d; margin-top:0; }
+  #close-modal { background:#ef4444; margin-top:10px; }
+  .hero { background:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat; height:300px; border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:center; color:white; text-shadow:2px 2px 4px rgba(0,0,0,0.5); }
+  .hero h1 { font-size:2.5em; }
+  @media(max-width:768px){ .calendar { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:480px){ .calendar { grid-template-columns:1fr; } nav { flex-direction:column; } }
+</style>
+</head>
+<body>
 
-  // ---------- UI helpers ----------
-  function showSection(id){
-    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.remove('hidden');
-    document.getElementById('tab-'+id).classList.add('active');
-    if(id === 'book') renderRecipesGrid();
-    if(id === 'meal') renderMealPlanner();
-    window.scrollTo({top:0, behavior:'smooth'});
-  }
+<nav>
+  <a href="#" id="nav-home" onclick="showSection('home')">Home</a>
+  <a href="#" id="nav-add" onclick="showSection('add')">Add Recipe</a>
+  <a href="#" id="nav-book" onclick="showSection('book')">Recipe Book</a>
+  <a href="#" id="nav-meal" onclick="showSection('meal')">Meal Planner</a>
+</nav>
 
-  // Expose showSection for header buttons
-  window.showSection = showSection;
+<div class="container">
 
-  // ---------- Firebase operations ----------
-  async function saveRecipeToFirebase(recipe){
-    // recipe { title, ingredients, instructions, image }
-    try{
-      await addDoc(collection(db, 'recipes'), recipe);
-      await loadRecipesFromFirebase();
-    }catch(err){
-      console.error("saveRecipe error", err);
-      alert("Could not save recipe — check console.");
-    }
-  }
+  <!-- Home -->
+  <section id="home-section">
+    <div class="hero">
+      <h1>Recipes & Meal Planning</h1>
+    </div>
+    <p style="text-align:center;">Organize, save, and plan your meals for the week with beautiful recipes and fine cuisine images.</p>
+  </section>
 
-  async function loadRecipesFromFirebase(){
-    try{
-      const snap = await getDocs(collection(db, 'recipes'));
-      const arr = [];
-      snap.forEach(docSnap => arr.push({ id: docSnap.id, ...docSnap.data() }));
-      RECIPES = arr;
-      renderRecipesGrid();
-      renderPool();
-    }catch(err){
-      console.error("loadRecipes error", err);
-    }
-  }
+  <!-- Add Recipe -->
+  <section id="add-section" class="hidden">
+    <h2>Add Recipe</h2>
+    <form id="add-form">
+      <label>Title</label>
+      <input type="text" id="add-title" required>
+      <label>Ingredients (one per line)</label>
+      <textarea id="add-ingredients" rows="4" required></textarea>
+      <label>Instructions</label>
+      <textarea id="add-instructions" rows="5" required></textarea>
+      <label>Upload Image</label>
+      <input type="file" id="add-image" accept="image/*">
+      <button type="submit">Add Recipe</button>
+    </form>
+  </section>
 
-  async function deleteRecipeFromFirebase(id){
-    if(!confirm("Delete this recipe permanently?")) return;
-    try{
-      await deleteDoc(doc(db, 'recipes', id));
-      await loadRecipesFromFirebase();
-    }catch(err){
-      console.error("delete error", err);
-    }
-  }
+  <!-- Recipe Book -->
+  <section id="book-section" class="hidden">
+    <h2>Recipe Book</h2>
+    <ul id="recipe-list"></ul>
+    <div id="no-recipes" style="text-align:center;color:#777;">No recipes yet. Add one!</div>
+  </section>
 
-  // ---------- Add form handling ----------
-  const uploadInput = document.getElementById('upload-image');
-  const previewImg = document.getElementById('image-preview');
+  <!-- Meal Planner -->
+  <section id="meal-section" class="hidden">
+    <h2>Weekly Meal Planner</h2>
+    <p style="text-align:center;">Drag recipes into each day. Double-click to remove.</p>
+    <div class="calendar" id="calendar">
+      <div class="day" data-day="Monday"><h4>Monday</h4></div>
+      <div class="day" data-day="Tuesday"><h4>Tuesday</h4></div>
+      <div class="day" data-day="Wednesday"><h4>Wednesday</h4></div>
+      <div class="day" data-day="Thursday"><h4>Thursday</h4></div>
+      <div class="day" data-day="Friday"><h4>Friday</h4></div>
+      <div class="day" data-day="Saturday"><h4>Saturday</h4></div>
+      <div class="day" data-day="Sunday"><h4>Sunday</h4></div>
+    </div>
+    <h3 style="margin-top:30px;">Your Recipes</h3>
+    <div id="recipe-pool"></div>
+    <button onclick="clearCalendar()">Clear Calendar</button>
+  </section>
 
-  uploadInput?.addEventListener?.('change', (e)=>{
-    const f = e.target.files?.[0];
-    if(!f) return;
-    const reader = new FileReader();
+</div>
+
+<!-- Modal -->
+<div id="recipe-modal">
+  <div id="modal-content">
+    <h3 id="modal-title"></h3>
+    <h4>Ingredients</h4>
+    <ul id="modal-ingredients"></ul>
+    <h4>Instructions</h4>
+    <p id="modal-instructions"></p>
+    <button id="close-modal">Close</button>
+  </div>
+</div>
+
+<script>
+let recipes = [];
+let mealPlan = {};
+
+function loadData() {
+  recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+  mealPlan = JSON.parse(localStorage.getItem('mealPlan')) || {};
+}
+function saveRecipes() { localStorage.setItem('recipes', JSON.stringify(recipes)); }
+function saveMealPlan() { localStorage.setItem('mealPlan', JSON.stringify(mealPlan)); }
+
+function showSection(name){
+  ['home','add','book','meal'].forEach(s=>{
+    document.getElementById(s+'-section').classList.add('hidden');
+    document.getElementById('nav-'+s)?.classList.remove('active');
+  });
+  document.getElementById(name+'-section').classList.remove('hidden');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  if(name==='book') renderBook();
+  if(name==='meal') renderMealPlanner();
+}
+
+document.getElementById('add-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const title=document.getElementById('add-title').value.trim();
+  const ingredients=document.getElementById('add-ingredients').value.trim();
+  const instructions=document.getElementById('add-instructions').value.trim();
+  const image=document.getElementById('add-image').files[0];
+  let reader = null;
+  if(image){
+    reader = new FileReader();
     reader.onload = function(ev){
-      previewImg.src = ev.target.result;
-      previewImg.style.display = 'block';
-    }
-    reader.readAsDataURL(f);
-  });
-
-  // Save from Add form
-  const addForm = document.getElementById('add-form');
-  addForm?.addEventListener?.('submit', async (evt)=>{
-    evt.preventDefault();
-    const title = document.getElementById('add-title').value.trim();
-    const ingredients = document.getElementById('add-ingredients').value.trim();
-    const instructions = document.getElementById('add-instructions').value.trim();
-    if(!title) return alert("Please add a title.");
-
-    // image: if preview shown and has data url, use it; otherwise use an Unsplash fallback
-    const image = previewImg && previewImg.src ? previewImg.src : `https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=60`;
-
-    await saveRecipeToFirebase({ title, ingredients, instructions, image });
-    clearAddForm();
+      const newRecipe={id:Date.now(),title,ingredients,instructions,image:ev.target.result};
+      recipes.push(newRecipe);
+      saveRecipes();
+      e.target.reset();
+      alert("Recipe added!");
+      showSection('book');
+    };
+    reader.readAsDataURL(image);
+  } else {
+    const newRecipe={id:Date.now(),title,ingredients,instructions};
+    recipes.push(newRecipe);
+    saveRecipes();
+    e.target.reset();
+    alert("Recipe added!");
     showSection('book');
+  }
+});
+
+function renderBook(){
+  loadData();
+  const list=document.getElementById('recipe-list');
+  list.innerHTML='';
+  if(recipes.length===0){
+    document.getElementById('no-recipes').style.display='block';
+    return;
+  }
+  document.getElementById('no-recipes').style.display='none';
+  recipes.forEach(r=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span style="cursor:pointer;font-weight:bold;" onclick="openRecipe(${r.id})">${r.title}</span>
+      <button onclick="deleteRecipe(${r.id})">Delete</button>`;
+    list.appendChild(li);
   });
+}
 
-  function clearAddForm(){
-    document.getElementById('add-title').value = '';
-    document.getElementById('add-ingredients').value = '';
-    document.getElementById('add-instructions').value = '';
-    previewImg.src = '';
-    previewImg.style.display = 'none';
-    uploadInput.value = '';
-  }
-
-  // ---------- Scraper ----------
-  async function scrapeRecipe(){
-    const url = document.getElementById('recipe-url').value.trim();
-    if(!url) return alert("Please paste a recipe URL to scrape.");
-    try{
-      const raw = await fetch(`https://api.spoonacular.com/recipes/extract?url=${encodeURIComponent(url)}&apiKey=${SPOONACULAR_KEY}`);
-      if(!raw.ok) throw new Error("Scrape failed (non-200).");
-      const data = await raw.json();
-      // Fill form fields
-      document.getElementById('add-title').value = data.title || '';
-      document.getElementById('add-ingredients').value = (data.extendedIngredients || []).map(x => x.original || x.name).join("\n");
-      // Remove HTML from instructions
-      const ins = data.instructions ? data.instructions.replace(/<\/?[^>]+(>|$)/g, "") : "";
-      document.getElementById('add-instructions').value = ins;
-      if(data.image){
-        previewImg.src = data.image;
-        previewImg.style.display = 'block';
-      }
-      showSection('add');
-      alert("Recipe imported — review and save.");
-    }catch(err){
-      console.error("scrape error", err);
-      alert("Could not import recipe. Spoonacular may have rate-limited you or the site blocking extraction.");
-    }
-  }
-  window.scrapeRecipe = scrapeRecipe;
-
-  // ---------- Rendering recipes ----------
-  function renderRecipesGrid(){
-    const grid = document.getElementById('recipes-grid');
-    grid.innerHTML = '';
-    if(!RECIPES.length){
-      grid.innerHTML = `<div class="muted">No recipes yet. Use Add or Scrape to populate your Recipe Book.</div>`;
-      return;
-    }
-    RECIPES.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'recipe-card';
-      card.innerHTML = `
-        <img src="${r.image}" alt="${escapeHtml(r.title)}">
-        <div class="meta">
-          <h4>${escapeHtml(r.title)}</h4>
-          <p>${truncateText(escapeHtml(r.ingredients).replace(/\n/g,' • '), 160)}</p>
-          <div class="row">
-            <button class="small-btn" onclick='populateView("${r.id}")'>View</button>
-            <button class="small-btn" onclick='deleteRecipeConfirm("${r.id}")'>Delete</button>
-          </div>
-        </div>
-      `;
-      grid.appendChild(card);
-    });
-  }
-
-  // helper: escape
-  function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]);}
-  function truncateText(s, n){ return s.length>n? s.slice(0,n-1)+'…': s; }
-
-  // show view modal (simple alert for now)
-  window.populateView = function(id){
-    const r = RECIPES.find(x => x.id === id);
-    if(!r) return;
-    const html = `<strong>${escapeHtml(r.title)}</strong>\n\nIngredients:\n${escapeHtml(r.ingredients)}\n\nInstructions:\n${escapeHtml(r.instructions)}`;
-    // simple modal: open small window
-    const w = window.open('', '_blank', 'width=600,height=700');
-    w.document.write(`<html><head><title>${escapeHtml(r.title)}</title></head><body style="font-family:Inter,sans-serif;padding:18px;"><img src="${r.image}" style="max-width:100%;height:auto;border-radius:8px;display:block;margin-bottom:12px;"><pre style="white-space:pre-wrap">${html}</pre></body></html>`);
-    w.document.close();
-  }
-
-  window.deleteRecipeConfirm = function(id){
-    if(confirm("Delete recipe — are you sure?")) deleteRecipeFromFirebase(id);
-  }
-
-  // ---------- Recipe pool and drag/drop ----------
-  function renderPool(){
-    const pool = document.getElementById('pool');
-    pool.innerHTML = '';
-    if(!RECIPES.length){ pool.innerHTML = '<div class="muted">No recipes available.</div>'; return; }
-    RECIPES.forEach(r=>{
-      const elm = document.createElement('div');
-      elm.className = 'recipe-card';
-      elm.draggable = true;
-      elm.innerHTML = `<img src="${r.image}" alt="${escapeHtml(r.title)}"><div class="meta"><h4>${escapeHtml(r.title)}</h4><p class="muted">${truncateText(r.ingredients.replace(/\n/g,' • '), 90)}</p></div>`;
-      elm.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', r.id);
-      });
-      pool.appendChild(elm);
-    });
-  }
-
-  // ---------- Meal planner ----------
-  function renderMealPlanner(){
-    const cal = document.getElementById('calendar');
-    cal.innerHTML = '';
-    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    days.forEach(d => {
-      const box = document.createElement('div');
-      box.className = 'day';
-      box.dataset.day = d;
-      box.innerHTML = `<h5>${d}</h5>`;
-      const meals = MEALPLAN[d] || [];
-      meals.forEach(rid => {
-        const recipe = RECIPES.find(x => x.id === rid);
-        if(!recipe) return;
-        const meal = document.createElement('div');
-        meal.className = 'meal';
-        meal.textContent = recipe.title;
-        // apply image if available
-        if(recipe.image) {
-          meal.style.backgroundImage = `linear-gradient(rgba(10,11,12,0.3), rgba(10,11,12,0.3)), url('${recipe.image}')`;
-        }
-        // double-click to remove
-        meal.ondblclick = () => {
-          if(confirm('Remove this meal from the day?')) {
-            removeMeal(d, rid);
-          }
-        };
-        box.appendChild(meal);
-      });
-      box.addEventListener('dragover', e => e.preventDefault());
-      box.addEventListener('drop', e => {
-        const rid = e.dataTransfer.getData('text/plain');
-        if(!rid) return;
-        MEALPLAN[d] = MEALPLAN[d] || [];
-        if(!MEALPLAN[d].includes(rid)) MEALPLAN[d].push(rid);
-        saveMealPlan();
-        renderMealPlanner();
-      });
-      cal.appendChild(box);
-    });
-  }
-
-  function removeMeal(day, rid){
-    MEALPLAN[day] = (MEALPLAN[day] || []).filter(x => x !== rid);
+function deleteRecipe(id){
+  if(confirm("Delete this recipe?")){
+    recipes=recipes.filter(r=>r.id!==id);
+    saveRecipes();
+    renderBook();
+    Object.keys(mealPlan).forEach(day=>{ mealPlan[day]=mealPlan[day].filter(i=>i!==id); });
     saveMealPlan();
-    renderMealPlanner();
   }
+}
 
-  function saveMealPlan(){
-    localStorage.setItem('fine_meal_plan', JSON.stringify(MEALPLAN));
+function openRecipe(id){
+  const r=recipes.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('modal-title').textContent=r.title;
+  document.getElementById('modal-ingredients').innerHTML=r.ingredients.split('\n').map(i=>`<li>${i}</li>`).join('');
+  document.getElementById('modal-instructions').textContent=r.instructions;
+  if(r.image){
+    const img=document.createElement('img'); img.src=r.image; img.style.width="100%"; img.style.borderRadius="8px"; 
+    document.getElementById('modal-content').insertBefore(img, document.getElementById('modal-title').nextSibling);
   }
+  document.getElementById('recipe-modal').style.display='flex';
+}
+document.getElementById('close-modal').onclick=()=>document.getElementById('recipe-modal').style.display='none';
+window.onclick=(e)=>{if(e.target.id==='recipe-modal')document.getElementById('recipe-modal').style.display='none';};
 
-  // download plan as image
-  window.downloadPlan = function(){
-    const cal = document.getElementById('calendar');
-    html2canvas(cal, { backgroundColor: '#fff' }).then(canvas=>{
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = 'meal-plan.png';
-      link.click();
+function renderMealPlanner(){
+  loadData();
+  const pool=document.getElementById('recipe-pool');
+  pool.innerHTML='';
+  if(recipes.length===0){ pool.innerHTML="<p>No recipes yet.</p>"; }
+  else {
+    recipes.forEach(r=>{
+      const div=document.createElement('div');
+      div.className='draggable';
+      div.textContent=r.title;
+      div.draggable=true;
+      div.dataset.id=r.id;
+      div.addEventListener('dragstart', handleDragStart);
+      pool.appendChild(div);
     });
   }
 
-  // ---------- Init ----------
-  async function initApp(){
-    await loadRecipesFromFirebase();
-    // show recipe book by default when loaded
-    renderPool();
-    renderMealPlanner();
-  }
-  initApp();
-
-  // expose some functions to window for buttons
-  window.deleteRecipeFromFirebase = deleteRecipeFromFirebase;
-  window.showSection = showSection;
-  window.saveRecipeToFirebase = saveRecipeToFirebase;
-  window.renderMealPlanner = renderMealPlanner;
-
-  // helper: ensure sections hide/show by id strings used in header nav
-  // initial show/hide mapping
-  document.querySelectorAll('.tabs button').forEach(b=>{
-    b.addEventListener('click', ()=>{ /* active class handled by showSection */ });
+  document.querySelectorAll('.day').forEach(day=>{
+    day.innerHTML=`<h4>${day.dataset.day}</h4>`;
+    const meals=mealPlan[day.dataset.day]||[];
+    meals.forEach(rid=>{
+      const recipe=recipes.find(r=>r.id==rid);
+      if(recipe){
+        const card=document.createElement('div');
+        card.className='card';
+        card.textContent=recipe.title;
+        card.ondblclick=(e)=>{ removeMeal(day.dataset.day,rid); };
+        day.appendChild(card);
+      }
+    });
+    day.addEventListener('dragover', e=>e.preventDefault());
+    day.addEventListener('drop', handleDrop);
   });
+}
 
+function handleDragStart(e){ e.dataTransfer.setData('text/plain', e.target.dataset.id); }
+function handleDrop(e){
+  const rid=parseInt(e.dataTransfer.getData('text/plain'));
+  const day=e.currentTarget.dataset.day;
+  if(!mealPlan[day]) mealPlan[day]=[];
+  mealPlan[day].push(rid);
+  saveMealPlan();
+  renderMealPlanner();
+}
+function removeMeal(day,rid){ mealPlan[day]=mealPlan[day].filter(i=>i!==rid); saveMealPlan(); renderMealPlanner(); }
+function clearCalendar(){ if(confirm("Clear all meals?")){ mealPlan={}; saveMealPlan(); renderMealPlanner(); } }
+
+loadData();
+showSection('home');
 </script>
 </body>
 </html>
