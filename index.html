@@ -7,7 +7,7 @@
 <style>
   body { margin:0; font-family:'Segoe UI',sans-serif; background:#e6f4f1; color:#333; }
   nav { background:#14532d; display:flex; flex-wrap:wrap; justify-content:center; padding:12px 0; }
-  nav a { color:white; margin:5px 15px; text-decoration:none; font-weight:bold; font-size:1.1em; }
+  nav a { color:white; margin:5px 15px; text-decoration:none; font-weight:bold; font-size:1.1em; cursor:pointer; }
   nav a.active { text-decoration:underline; }
   .container { max-width:1000px; margin:20px auto; padding:20px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); min-height:400px;}
   h1, h2 { text-align:center; color:#14532d; }
@@ -28,6 +28,7 @@
   #close-modal { background:#ef4444; margin-top:10px; }
   .hero { background:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat; height:300px; border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:center; color:white; text-shadow:2px 2px 4px rgba(0,0,0,0.5); }
   .hero h1 { font-size:2.5em; }
+  img.recipe-img { max-height:50px; margin-left:10px; border-radius:6px; }
   @media(max-width:768px){ .calendar { grid-template-columns:repeat(2,1fr); } }
   @media(max-width:480px){ .calendar { grid-template-columns:1fr; } nav { flex-direction:column; } }
 </style>
@@ -35,10 +36,10 @@
 <body>
 
 <nav>
-  <a href="#" id="nav-home" onclick="showSection('home')">Home</a>
-  <a href="#" id="nav-add" onclick="showSection('add')">Add Recipe</a>
-  <a href="#" id="nav-book" onclick="showSection('book')">Recipe Book</a>
-  <a href="#" id="nav-meal" onclick="showSection('meal')">Meal Planner</a>
+  <a id="nav-home" onclick="showSection('home')">Home</a>
+  <a id="nav-add" onclick="showSection('add')">Add Recipe</a>
+  <a id="nav-book" onclick="showSection('book')">Recipe Book</a>
+  <a id="nav-meal" onclick="showSection('meal')">Meal Planner</a>
 </nav>
 
 <div class="container">
@@ -48,7 +49,7 @@
     <div class="hero">
       <h1>Recipes and Meal Planning</h1>
     </div>
-    <p style="text-align:center; font-size:1.2em;">Welcome to Recipes and Meal Planning! Add your favorite recipes, browse your recipe book, and plan your weekly meals with drag-and-drop ease. Beautiful images and fine cuisine ideas included!</p>
+    <p style="text-align:center; font-size:1.2em;">Welcome! Add your favorite recipes, browse your recipe book, and plan your weekly meals with drag-and-drop ease. Enjoy fine cuisine images and professional layout!</p>
   </section>
 
   <!-- Add Recipe -->
@@ -157,9 +158,17 @@
       await new Promise(res=>reader.onload=()=>res());
     }
 
-    await addDoc(collection(db,"recipes"),{title,ingredients,instructions,image:reader?reader.result:null,timestamp:Date.now()});
-    alert("Recipe saved!");
+    await addDoc(collection(db,"recipes"),{
+      title,
+      ingredients,
+      instructions,
+      image:reader?reader.result:null,
+      timestamp:Date.now()
+    });
+
     e.target.reset();
+    alert("Recipe saved!");
+    await loadRecipesFromFirestore();
   });
 
   function renderBook(){
@@ -172,7 +181,7 @@
     recipes.forEach(r=>{
       const li=document.createElement('li');
       li.innerHTML=`<span onclick="openRecipe('${r.id}')" style="cursor:pointer;font-weight:bold;">${r.title}</span>`;
-      if(r.image){ const img=document.createElement('img'); img.src=r.image; img.style.height='50px'; img.style.marginLeft='10px'; li.appendChild(img); }
+      if(r.image){ const img=document.createElement('img'); img.src=r.image; img.className='recipe-img'; li.appendChild(img); }
       list.appendChild(li);
     });
   }
@@ -187,7 +196,7 @@
   }
 
   document.getElementById('close-modal').onclick=()=>document.getElementById('recipe-modal').style.display='none';
-  window.onclick=(e)=>{if(e.target.id==='recipe-modal') document.getElementById('recipe-modal').style.display='none';};
+  window.onclick=(e)=>{if(e.target.id==='recipe-modal')document.getElementById('recipe-modal').style.display='none';};
 
   function renderMealPlanner(){
     const pool=document.getElementById('recipe-pool');
@@ -230,5 +239,6 @@
 
   showSection('home');
 </script>
+
 </body>
 </html>
